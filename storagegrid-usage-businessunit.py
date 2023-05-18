@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import requests
 import csv
 from getpass import getpass
@@ -9,9 +11,9 @@ password = getpass('Enter the password: ')
 
 # Define the business units and their corresponding substrings in tenant names
 business_units = {
-    'Business Unit A': 'unitA',
-    'Business Unit B': 'unitB',
-    'Business Unit C': 'unitC',
+    'Business Unit A': ['unitA', 'deptA'],
+    'Business Unit B': ['unitB', 'deptB'],
+    'Business Unit C': ['unitC', 'deptC'],
 }
 
 # Create a session and authenticate
@@ -24,6 +26,9 @@ headers = {'Authorization': f'Bearer {access_token}'}
 
 # Create a dictionary to store the usage totals for each business unit
 usage_totals = {unit: {'Total Capacity': 0, 'Used Capacity': 0, 'Number of Objects': 0} for unit in business_units}
+
+# Create a separate total for the "Other" group
+usage_totals['Other'] = {'Total Capacity': 0, 'Used Capacity': 0, 'Number of Objects': 0}
 
 # Retrieve the list of all tenants
 tenants_url = f'{api_base_url}/tenants'
@@ -38,14 +43,17 @@ for tenant in tenants:
 
     # Find the matching business unit based on substring match
     matching_unit = None
-    for unit, substring in business_units.items():
-        if substring in tenant_name:
-            matching_unit = unit
+    for unit, substrings in business_units.items():
+        for substring in substrings:
+            if substring in tenant_name:
+                matching_unit = unit
+                break
+        if matching_unit:
             break
 
-    # Skip the tenant if no matching business unit is found
+    # If no matching business unit is found, assign to the "Other" group
     if not matching_unit:
-        continue
+        matching_unit = 'Other'
 
     # Retrieve the list of buckets for the tenant
     buckets_url = f'{api_base_url}/tenants/{tenant_id}/buckets'
@@ -80,12 +88,4 @@ with open(csv_file_path, 'w', newline='') as csv_file:
     writer = csv.writer(csv_file)
 
     # Write headers to the CSV file
-    headers = ['Business Unit', 'Total Capacity', 'Used Capacity', 'Number of Objects']
-    writer.writerow(headers)
-
-    # Write the usage totals for each business unit to the CSV file
-    for unit, totals in usage_totals.items():
-        row_data = [unit, totals['Total Capacity'], totals['Used Capacity'], totals['Number of Objects']]
-        writer.writerow(row_data)
-
-print(f'Report generated successfully: {csv_file_path}')
+    headers = ['Business Unit', 'Total Capacity', 'Used Capacity
