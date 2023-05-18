@@ -1,10 +1,11 @@
 import requests
 import csv
+from getpass import getpass
 
 # StorageGRID WMI API endpoint and authentication details
 api_base_url = 'https://your-storagegrid-url/api/v3'
-username = 'your-username'
-password = 'your-password'
+username = input('Enter the username: ')
+password = getpass('Enter the password: ')
 
 # Define the business units and their corresponding substrings in tenant names
 business_units = {
@@ -16,7 +17,7 @@ business_units = {
 # Create a session and authenticate
 session = requests.Session()
 auth_url = f'{api_base_url}/authorize'
-response = session.get(auth_url, auth=(username, password))
+response = session.get(auth_url, auth=(username, password), verify=False)
 response.raise_for_status()
 access_token = response.json()['access_token']
 headers = {'Authorization': f'Bearer {access_token}'}
@@ -26,7 +27,7 @@ usage_totals = {unit: {'Total Capacity': 0, 'Used Capacity': 0, 'Number of Objec
 
 # Retrieve the list of all tenants
 tenants_url = f'{api_base_url}/tenants'
-response = session.get(tenants_url, headers=headers)
+response = session.get(tenants_url, headers=headers, verify=False)
 response.raise_for_status()
 tenants = response.json()['data']
 
@@ -48,7 +49,7 @@ for tenant in tenants:
 
     # Retrieve the list of buckets for the tenant
     buckets_url = f'{api_base_url}/tenants/{tenant_id}/buckets'
-    response = session.get(buckets_url, headers=headers)
+    response = session.get(buckets_url, headers=headers, verify=False)
     response.raise_for_status()
     buckets = response.json()['data']
 
@@ -59,7 +60,7 @@ for tenant in tenants:
 
         # Retrieve usage statistics for the bucket
         bucket_url = f'{api_base_url}/usage/buckets/{bucket_id}'
-        response = session.get(bucket_url, headers=headers)
+        response = session.get(bucket_url, headers=headers, verify=False)
         response.raise_for_status()
         usage_data = response.json()['data']
 
