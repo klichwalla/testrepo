@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import requests
 import csv
 from getpass import getpass
@@ -88,4 +86,12 @@ with open(csv_file_path, 'w', newline='') as csv_file:
     writer = csv.writer(csv_file)
 
     # Write headers to the CSV file
-    headers = ['Business Unit', 'Total Capacity', 'Used Capacity
+    headers = ['Business Unit', 'Total Capacity', 'Used Capacity', 'Number of Objects']
+    writer.writerow(headers)
+
+    # Write the usage totals for each business unit to the CSV file
+    for unit, totals in usage_totals.items():
+        row_data = [unit, totals['Total Capacity'], totals['Used Capacity'], totals['Number of Objects']]
+        writer.writerow(row_data)
+
+print(f'Report generated successfully: {csv_file_path}')
