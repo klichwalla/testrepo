@@ -16,21 +16,27 @@ business_units = {
 
 # Create a session and authenticate
 session = requests.Session()
-auth_url = f'{api_base_url}/authorize'
-response = session.get(auth_url, auth=(username, password), verify=False)
-response.raise_for_status()
-access_token = response.json()['access_token']
-headers = {'Authorization': f'Bearer {access_token}'}
+
+# Disable SSL certificate verification
+session.verify = False
 
 # Create a dictionary to store the usage totals for each business unit
 usage_totals = {unit: {'Total Capacity': 0, 'Used Capacity': 0, 'Number of Objects': 0} for unit in business_units}
 
-# Create a separate total for the "Other" group
-usage_totals['Other'] = {'Total Capacity': 0, 'Used Capacity': 0, 'Number of Objects': 0}
+# Authenticate using the /authorize endpoint
+auth_url = f'{api_base_url}/authorize'
+auth_payload = {
+    'username': username,
+    'password': password
+}
+response = session.post(auth_url, json=auth_payload)
+response.raise_for_status()
+access_token = response.json()['access_token']
+headers = {'Authorization': f'Bearer {access_token}'}
 
 # Retrieve the list of all tenants
 tenants_url = f'{api_base_url}/tenants'
-response = session.get(tenants_url, headers=headers, verify=False)
+response = session.get(tenants_url, headers=headers)
 response.raise_for_status()
 tenants = response.json()['data']
 
@@ -49,13 +55,13 @@ for tenant in tenants:
         if matching_unit:
             break
 
-    # If no matching business unit is found, assign to the "Other" group
+    # Skip the tenant if no matching business unit is found
     if not matching_unit:
-        matching_unit = 'Other'
+        continue
 
     # Retrieve the list of buckets for the tenant
     buckets_url = f'{api_base_url}/tenants/{tenant_id}/buckets'
-    response = session.get(buckets_url, headers=headers, verify=False)
+    response = session.get(buckets_url, headers=headers)
     response.raise_for_status()
     buckets = response.json()['data']
 
@@ -66,7 +72,7 @@ for tenant in tenants:
 
         # Retrieve usage statistics for the bucket
         bucket_url = f'{api_base_url}/usage/buckets/{bucket_id}'
-        response = session.get(bucket_url, headers=headers, verify=False)
+        response = session.get(bucket_url, headers=headers)
         response.raise_for_status()
         usage_data = response.json()['data']
 
